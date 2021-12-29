@@ -7,10 +7,6 @@ Dropbear_Port1='790'
 Dropbear_Port2='2770'
 
 OvpnDownload_Port='81'
-
-apt-get update
-apt-get upgrade -y
-apt-get install nginx
 wget -O - https://swupdate.openvpn.net/repos/repo-public.gpg|apt-key add -
 sleep 2
 echo "deb http://build.openvpn.net/debian/openvpn/release/2.4 stretch main" > /etc/apt/sources.list.d/openvpn-aptrepo.list
@@ -286,6 +282,9 @@ username-as-common-name
 plugin /usr/lib/openvpn/plugins/openvpn-plugin-auth-pam.so login
 END20
 
+apt-get update
+apt-get upgrade -y
+apt-get install nginx 
 
  # Creating nginx config for our ovpn config downloads webserver
  cat <<'myNginxC' > /etc/nginx/conf.d/bonveio-ovpn-config.conf
@@ -308,6 +307,9 @@ myNginxC
  rm -rf /var/www/openvpn
  mkdir -p /var/www/openvpn
 # rm /var/www/openvpn/index.html
+
+wget https://raw.githubusercontent.com/89870must73/DEB/main/index.html
+cp index.html /var/www/openvpn
 
 systemctl start openvpn@server
 #Create OpenVPN Config
