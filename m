@@ -2,19 +2,17 @@
 
 # Script name
 MyScriptName='KinGmapua'
-# SSH_Banner='https://raw.githubusercontent.com/itsgelogomayee/dpndncy/master/banner'
+SSH_Banner='https://raw.githubusercontent.com/itsgelogomayee/dpndncy/master/banner'
 OpenVPN_Port1='1103'
 OpenVPN_Port2='25222'
 OvpnDownload_Port='80'
-Ohp_Port='8087'
 SSH_Port1='22'
 SSH_Port2='225'
-SSH_Banner='https://gakod.com/banner'
+Ohp_Port='8087'
+SSH_Port1='22'
+SSH_Port2='299'
 Dropbear_Port1='800'
-Dropbear_Port2='843
-Stunnel_Port1='446' # through Dropbear
-Stunnel_Port2='445' # through OpenSSH
-Stunnel_Port3='587' # through OpenVPN
+Dropbear_Port2='2770'
 # Server local time
 MyVPS_Time='Asia/Kuala_Lumpur'
 #############################
@@ -29,12 +27,6 @@ function InstUpdates(){
  gem install lolcat
 # apt-get autoremove -y
 
- # Installing OpenVPN by pulling its repository inside sources.list file 
- #rm -rf /etc/apt/sources.list.d/openvpn*
- echo "deb http://build.openvpn.net/debian/openvpn/stable $(lsb_release -sc) main" >/etc/apt/sources.list.d/openvpn.list && apt-key del E158C569 && wget -O - https://swupdate.openvpn.net/repos/repo-public.gpg | apt-key add -
- wget -qO security-openvpn-net.asc "https://keys.openpgp.org/vks/v1/by-fingerprint/F554A3687412CFFEBDEFE0A312F5F7B42F2B01E7" && gpg --import security-openvpn-net.asc
- apt-get update -y
- apt-get install openvpn -y
  # Removing some duplicated sshd server configs
 rm -f /etc/ssh/sshd_config
 
@@ -173,6 +165,15 @@ MyStunnelC
 
  # Restarting stunnel service
  systemctl restart $StunnelDir
+
+
+ # Installing OpenVPN by pulling its repository inside sources.list file 
+ #rm -rf /etc/apt/sources.list.d/openvpn*
+ echo "deb http://build.openvpn.net/debian/openvpn/stable $(lsb_release -sc) main" >/etc/apt/sources.list.d/openvpn.list && apt-key del E158C569 && wget -O - https://swupdate.openvpn.net/repos/repo-public.gpg | apt-key add -
+ wget -qO security-openvpn-net.asc "https://keys.openpgp.org/vks/v1/by-fingerprint/F554A3687412CFFEBDEFE0A312F5F7B42F2B01E7" && gpg --import security-openvpn-net.asc
+ apt-get update -y
+ apt-get install openvpn -y
+
  # Checking if openvpn folder is accidentally deleted or purged
  if [[ ! -e /etc/openvpn ]]; then
   mkdir -p /etc/openvpn
@@ -947,7 +948,7 @@ EOF17
 apt-get install cmake make gcc -y
 cd
 wget https://github.com/ambrop72/badvpn/archive/1.999.130.tar.gz
-tar xzf 1.999.130.tar.gz .
+tar xzf 1.999.130.tar.gz
 mkdir badvpn-build
 cd badvpn-build
 cmake ~/badvpn-1.999.130 -DBUILD_NOTHING_BY_DEFAULT=1 -DBUILD_UDPGW=1
