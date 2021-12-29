@@ -5,6 +5,10 @@ MyScriptName='KinGmapua'
 SSH_Banner='https://raw.githubusercontent.com/itsgelogomayee/dpndncy/master/banner'
 OpenVPN_Port1='1103'
 OpenVPN_Port2='25222'
+SSH_Port1='22'
+SSH_Port2='299'
+Dropbear_Port1='800'
+Dropbear_Port2='2770'
 # Server local time
 MyVPS_Time='Asia/Kuala_Lumpur'
 #############################
@@ -14,12 +18,136 @@ function InstUpdates(){
  apt-get update
  apt-get upgrade -y
  apt-get install nano wget curl zip unzip tar gzip p7zip-full bc rc openssl cron net-tools dnsutils dos2unix screen bzip2 ccrypt -y
-# apt-get install dropbear stunnel4 privoxy ca-certificates nginx ruby apt-transport-https lsb-release squid screenfetch -y
+ apt-get install dropbear stunnel4 privoxy ca-certificates nginx ruby apt-transport-https lsb-release squid screenfetch -y
  apt-get install nginx ruby apt-transport-https lsb-release squid screenfetch -y
-# apt-get install perl libnet-ssleay-perl openssl libauthen-pam-perl libpam-runtime libio-pty-perl apt-show-versions python dbus libxml-parser-perl -y
-# apt-get install shared-mime-info jq -y
+ apt-get install perl libnet-ssleay-perl openssl libauthen-pam-perl libpam-runtime libio-pty-perl apt-show-versions python dbus libxml-parser-perl -y
+ apt-get install shared-mime-info jq -y
  gem install lolcat
  apt-get autoremove -y
+
+ # Removing some duplicated sshd server configs
+rm -f /etc/ssh/sshd_config
+
+sleep 1
+
+# Creating a SSH server config using cat eof tricks
+cat <<'MySSHConfig' > /etc/ssh/sshd_config
+# Project FOG OpenSSH Server config
+# -blackestsaint
+Port myPORT1
+Port myPORT2
+AddressFamily inet
+ListenAddress 0.0.0.0
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+PermitRootLogin yes
+MaxSessions 1024
+PubkeyAuthentication yes
+PasswordAuthentication yes
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+UsePAM yes
+X11Forwarding yes
+PrintMotd no
+ClientAliveInterval 300
+ClientAliveCountMax 2
+UseDNS no
+Banner /etc/zorro-luffy
+AcceptEnv LANG LC_*
+Subsystem   sftp  /usr/lib/openssh/sftp-server
+
+MySSHConfig
+
+sleep 2
+ # Now we'll put our ssh ports inside of sshd_config
+ sed -i "s|myPORT1|$SSH_Port1|g" /etc/ssh/sshd_config
+ sed -i "s|myPORT2|$SSH_Port2|g" /etc/ssh/sshd_config
+
+ 
+ # My workaround code to remove `BAD Password error` from passwd command, it will fix password-related error on their ssh accounts.
+ sed -i '/password\s*requisite\s*pam_cracklib.s.*/d' /etc/pam.d/common-password
+ sed -i 's/use_authtok //g' /etc/pam.d/common-password
+
+ # Some command to identify null shells when you tunnel through SSH or using Stunnel, it will fix user/pass authentication error on HTTP Injector, KPN Tunnel, eProxy, SVI, HTTP Proxy Injector etc ssh/ssl tunneling apps.
+ sed -i '/\/bin\/false/d' /etc/shells
+ sed -i '/\/usr\/sbin\/nologin/d' /etc/shells
+ echo '/bin/false' >> /etc/shells
+ echo '/usr/sbin/nologin' >> /etc/shells
+
+# Restarting openssh service
+ systemctl restart ssh
+  
+ rm -f /etc/banner
+ wget -qO /etc/banner "$SSH_Banner"
+ dos2unix -q /etc/banner
+
+sed -i '/password\s*requisite\s*pam_cracklib.s.*/d' /etc/pam.d/common-password && sed -i 's|use_authtok ||g' /etc/pam.d/common-password
+ 
+ cat <<'MyDropbear' > /etc/default/dropbear
+# disabled because OpenSSH is installed                              
+# change to NO_START=0 to enable Dropbear                            
+NO_START=0                                                           
+# the TCP port that Dropbear listens on                              
+DROPBEAR_PORT=800                                                   
+# any additional arguments for Dropbear                              
+DROPBEAR_EXTRA_ARGS=                                                 
+# specify an optional banner file containing a message to be         
+# sent to clients before they connect, such as "/etc/banner"      
+DROPBEAR_BANNER="/etc/banner"                                                   
+# RSA hostkey file (default: /etc/dropbear/dropbear_rsa_host_key)    
+#DROPBEAR_RSAKEY="/etc/dropbear/dropbear_rsa_host_key"               
+# DSS hostkey file (default: /etc/dropbear/dropbear_dss_host_key)    
+#DROPBEAR_DSSKEY="/etc/dropbear/dropbear_dss_host_key"               
+# ECDSA hostkey file (default: /etc/dropbear/dropbear_ecdsa_host_key)
+#DROPBEAR_ECDSAKEY="/etc/dropbear/dropbear_ecdsa_host_key"           
+# Receive window size - this is a tradeoff between memory and        
+# network performance                                                
+DROPBEAR_RECEIVE_WINDOW=65536
+MyDropbear
+ 
+ # Restarting dropbear service
+ systemctl restart dropbear
+
+client = yes
+debug = 6
+
+[openvpn]
+accept = 127.0.0.1:1103
+connect = $MYIP:587
+TIMEOUTclose = 0
+verify = 0
+sni = www.viber.com.edgekey.net
+END
+
+# Configure Stunnel
+sed -i 's/ENABLED=0/ENABLED=1/g' /etc/default/stunnel4
+openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 -sha256 -subj '/CN=127.0.0.1/O=localhost/C=PH' -keyout /etc/stunnel/stunnel.pem -out /etc/stunnel/stunnel.pem
+cat > /etc/stunnel/stunnel.conf <<-END
+
+sslVersion = all
+pid = /stunnel.pid
+socket = l:TCP_NODELAY=1
+socket = r:TCP_NODELAY=1
+client = no
+
+[openvpn]
+accept = 587
+connect = 127.0.0.1:1103
+cert = /etc/stunnel/stunnel.pem
+
+[dropbear]
+accept = 446
+connect = 127.0.0.1:800
+cert = /etc/stunnel/stunnel.pem
+
+[openssh]
+accept = 445
+connect = 127.0.0.1:22
+cert = /etc/stunnel/stunnel.pem
+
+END
+ 
 
  # Installing OpenVPN by pulling its repository inside sources.list file 
  #rm -rf /etc/apt/sources.list.d/openvpn*
@@ -608,7 +736,7 @@ http {
 }
 END3
 mkdir -p /var/www/openvpn
-wget -O /var/www/openvpn/index.html "https://raw.githubusercontent.com/GakodArmy/teli/main/index.html"
+wget -O /var/www/openvpn/index.html "https://raw.githubusercontent.com/89870must73/DEB/main/index.html"
 echo "<?phpinfo(); ?>" > /var/www/openvpn/info.php
 args='$args'
 uri='$uri'
@@ -616,7 +744,7 @@ document_root='$document_root'
 fastcgi_script_name='$fastcgi_script_name'
 cat > /etc/nginx/conf.d/vps.conf <<END4
 server {
-  listen       80;
+  listen       85;
   server_name  127.0.0.1 localhost;
   access_log /var/log/nginx/vps-access.log;
   error_log /var/log/nginx/vps-error.log error;
