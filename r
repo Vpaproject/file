@@ -790,9 +790,6 @@ $(cat /etc/openvpn/ta.key)
 </tls-auth>
 EOF17
 
-wget https://raw.githubusercontent.com/89870must73/DEB/main/index.html
-cp index.html /var/www/openvpn
- 
  # Restarting nginx service
  systemctl restart nginx
 cd
