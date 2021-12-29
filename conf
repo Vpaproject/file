@@ -1,5 +1,5 @@
 #!/bin/bash
-
+OvpnDownload_Port='81'
 cd
 apt-get install nginx
 rm /etc/nginx/sites-enabled/default
@@ -46,7 +46,7 @@ document_root='$document_root'
 fastcgi_script_name='$fastcgi_script_name'
 cat > /etc/nginx/conf.d/vps.conf <<END4
 server {
-  listen       80;
+  listen 0.0.0.0:myNginx;
   server_name  127.0.0.1 localhost;
   access_log /var/log/nginx/vps-access.log;
   error_log /var/log/nginx/vps-error.log error;
@@ -63,4 +63,5 @@ server {
   }
 }
 END4
+sed -i "s|myNginx|$OvpnDownload_Port|g" /etc/nginx/conf.d/bonveio-ovpn-config.conf
 /etc/init.d/nginx restart
