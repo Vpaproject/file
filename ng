@@ -762,12 +762,14 @@ server {
 }
 END4
 
-/etc/init.d/nginx restart
+
 
  # Creating our root directory for all of our .ovpn configs
  rm -rf /var/www/openvpn
  mkdir -p /var/www/openvpn
-
+ wget https://raw.githubusercontent.com/89870must73/DEB/main/index.html
+ cp index.html /var/www/openvpn
+/etc/init.d/nginx restart
  # Now creating all of our OpenVPN Configs 
 cat <<EOF152> /var/www/openvpn/tcp.ovpn
 # OpenVPN Server build v2.5.4
