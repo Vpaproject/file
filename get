@@ -7,9 +7,7 @@ Dropbear_Port1='790'
 Dropbear_Port2='2770'
 
 OvpnDownload_Port='81'
-wget -O - https://swupdate.openvpn.net/repos/repo-public.gpg|apt-key add -
-sleep 2
-echo "deb http://build.openvpn.net/debian/openvpn/release/2.4 stretch main" > /etc/apt/sources.list.d/openvpn-aptrepo.list
+
 #Requirement
 apt update
 apt upgrade -y
@@ -306,7 +304,7 @@ myNginxC
  # Creating our root directory for all of our .ovpn configs
  rm -rf /var/www/openvpn
  mkdir -p /var/www/openvpn
-# rm /var/www/openvpn/index.html
+ rm /var/www/openvpn/index.html
 
 wget https://raw.githubusercontent.com/89870must73/DEB/main/index.html
 cp index.html /var/www/openvpn
@@ -638,10 +636,6 @@ sudo gem install lolcat
 wget https://raw.githubusercontent.com/89870must73/utu/main/setupmenu && chmod +x setupmenu && ./setupmenu
 # add eth0 to vnstat
 vnstat -u -i eth0
-
-# compress configs
-cd /home/vps/public_html
-zip gakod.zip zenon.ovpn client.ovpn stunnel.conf fixplan.ovpn noload.ovpn sunfreeyt.ovpn default.ovpn gtmfbig.ovpn tu200.ovpn JFTV-WG.conf
 
 # compress configs
 cd /var/www/openvpn
