@@ -7,7 +7,7 @@ Dropbear_Port1='790'
 Dropbear_Port2='2770'
 # Privoxy Ports
 Privoxy_Port1='9880'
-Privoxy_Port2='8081'
+Privoxy_Port2='2202'
 
 # Squid Ports
 Squid_Port1='8000'
@@ -19,7 +19,7 @@ OvpnDownload_Port='81'
 #Requirement
 apt update
 apt upgrade -y
-apt install openvpn stunnel4 privoxy squid dropbear vnstat ufw build-essential fail2ban zip -y
+apt install openvpn stunnel4 privoxy dropbear vnstat ufw build-essential fail2ban zip -y
 
 # initializing var
 MYIP=$(wget -qO- ipv4.icanhazip.com);
@@ -210,212 +210,40 @@ username-as-common-name
 plugin /usr/lib/openvpn/plugins/openvpn-plugin-auth-pam.so login
 END20
 
-clear
-DISTRO=`awk '/^ID=/' /etc/*-release | awk -F'=' '{ print tolower($2) }'`
-SERVER_IP=`ip -o route get to 8.8.8.8 | sed -n 's/.*src \([0-9.]\+\).*/\1/p'`
-
-
-# Install Dependencies
-echo 'Installing Dependencies'
-DEBIAN_FRONTEND=noninteractive apt install -y resolvconf privoxy stunnel unzip iproute2 dns2tcp
-echo 'Dependencies Installed!' 
-
-# Install TunnelCat VPN Software
-echo 'Installing ohpserver'
-wget https://github.com/lfasmpao/open-http-puncher/releases/download/0.1/ohpserver-linux32.zip
-unzip ohpserver-linux32.zip
-rm ohpserver-linux32.zip
-mv ohpserver /usr/local/bin/
-chmod +x /usr/local/bin/ohpserver
-
-# Setup Privoxy
-echo 'Setting up Privoxy'
-mkdir /etc/privoxy/
-cat <<EOF > /etc/privoxy/config
-user-manual /usr/share/doc/privoxy/user-manual
-confdir /etc/privoxy
-logdir /var/log/privoxy
-actionsfile match-all.action
-actionsfile default.action
-actionsfile user.action
-filterfile default.filter
-filterfile user.filter
-logfile logfile
-listen-address  :8081
-toggle 1
-enable-remote-toggle  0
-enable-remote-http-toggle  0
-enable-edit-actions 0
-enforce-blocks 0
-buffer-limit 4096
-enable-proxy-authentication-forwarding 0
-forwarded-connect-retries  0
-accept-intercepted-requests 0
-allow-cgi-request-crunching 0
-split-large-forms 0
-keep-alive-timeout 5
-tolerate-pipelining 1
-socket-timeout 300
-EOF
-
-cat <<EOF1 > /etc/privoxy/user.action
-{ +block }
-/
-{ -block }
-*.tcat.me
-127.0.0.1
-$SERVER_IP
-EOF1
-
-# Setup ohpserver
-echo 'Setup ohpserver'
-cat <<EOF > /etc/systemd/system/ohpserver.service
-[Unit]
-Description=Daemonize OpenHTTP Puncher Server
-Wants=network.target
-After=network.target
-[Service]
-ExecStart=/usr/local/bin/ohpserver -port 8087 -proxy 127.0.0.1:8081 -tunnel $SERVER_IP:1103
-Restart=always
-RestartSec=3
-[Install]
-WantedBy=multi-user.target
-EOF
-
-echo 'Setup dns2tcp'
-cat <<EOF > /etc/dns2tcpd.conf
-listen = 0.0.0.0
-port = 53
-user = nobody
-chroot = /tmp
-pid_file = /var/run/dns2tcp.pid
-domain = $DNS_TUNNEL_DOMAIN
-resources = ovpn:$SERVER_IP:1103
-EOF
-
-# Start Services
-echo 'Running Services'
-echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/head
-systemctl daemon-reload
-systemctl restart resolvconf
-systemctl restart stunnel4
-systemctl restart privoxy
-systemctl start ohpserver
-systemctl stop systemd-resolved
-systemctl start dns2tcp
-
-# Enable on boot
-echo 'Start services on boot'
-systemctl enable stunnel4
-systemctl enable privoxy
-systemctl enable dns2tcp
-systemctl enable ohpserver
-
-
- # Removing Duplicate Squid config
- rm -rf /etc/squid/squid.con*
- 
- # Creating Squid server config using cat eof tricks
- cat <<'mySquid' > /etc/squid/squid.conf
-# My Squid Proxy Server Config
-acl VPN dst IP-ADDRESS/32
-http_access allow VPN
-http_access deny all 
-http_port 0.0.0.0:Squid_Port1
-http_port 0.0.0.0:Squid_Port2
-http_port 0.0.0.0:Squid_Port3
+# install squid
+apt-get -y install squid
+cat > /etc/squid/squid.conf <<-END
+acl server dst xxxxxxxxx/32 localhost
+acl checker src 188.93.95.137
+acl ports_ port 14 22 53 21 8080 8081 8000 3128 1193 1194 440 441 442 443 80
+http_port 3128
+http_port 8000
+http_port 8888
+access_log none
+cache_log /dev/null
+logfile_rotate 0
+http_access allow server
+http_access allow checker
+http_access deny all
+forwarded_for off
+via off
 ### Allow Headers
 acl all src 0.0.0.0/0
 http_access allow all
-request_header_access Allow allow all 
-request_header_access Authorization allow all 
-request_header_access WWW-Authenticate allow all 
-request_header_access Proxy-Authorization allow all 
-request_header_access Proxy-Authenticate allow all 
-request_header_access Cache-Control allow all 
-request_header_access Content-Encoding allow all 
-request_header_access Content-Length allow all 
-request_header_access Content-Type allow all 
-request_header_access Date allow all 
-request_header_access Expires allow all 
-request_header_access Host allow all 
-request_header_access If-Modified-Since allow all 
-request_header_access Last-Modified allow all 
-request_header_access Location allow all 
-request_header_access Pragma allow all 
-request_header_access Accept allow all 
-request_header_access Accept-Charset allow all 
-request_header_access Accept-Encoding allow all 
-request_header_access Accept-Language allow all 
-request_header_access Content-Language allow all 
-request_header_access Mime-Version allow all 
-request_header_access Retry-After allow all 
-request_header_access Title allow all 
-request_header_access Connection allow all 
-request_header_access Proxy-Connection allow all 
-request_header_access User-Agent allow all 
-request_header_access Cookie allow all 
+request_header_access Host allow all
+request_header_access Content-Length allow all
+request_header_access Content-Type allow all
 request_header_access All deny all
-### HTTP Anonymizer Paranoid
-reply_header_access Allow allow all 
-reply_header_access Authorization allow all 
-reply_header_access WWW-Authenticate allow all 
-reply_header_access Proxy-Authorization allow all 
-reply_header_access Proxy-Authenticate allow all 
-reply_header_access Cache-Control allow all 
-reply_header_access Content-Encoding allow all 
-reply_header_access Content-Length allow all 
-reply_header_access Content-Type allow all 
-reply_header_access Date allow all 
-reply_header_access Expires allow all 
-reply_header_access Host allow all 
-reply_header_access If-Modified-Since allow all 
-reply_header_access Last-Modified allow all 
-reply_header_access Location allow all 
-reply_header_access Pragma allow all 
-reply_header_access Accept allow all 
-reply_header_access Accept-Charset allow all 
-reply_header_access Accept-Encoding allow all 
-reply_header_access Accept-Language allow all 
-reply_header_access Content-Language allow all 
-reply_header_access Mime-Version allow all 
-reply_header_access Retry-After allow all 
-reply_header_access Title allow all 
-reply_header_access Connection allow all 
-reply_header_access Proxy-Connection allow all 
-reply_header_access User-Agent allow all 
-reply_header_access Cookie allow all 
-reply_header_access All deny all
-#Korn
-cache_mem 200 MB
-maximum_object_size_in_memory 32 KB
-maximum_object_size 1024 MB
-minimum_object_size 0 KB
-cache_swap_low 90
-cache_swap_high 95
-cache_dir ufs /var/spool/squid 100 16 256
-access_log /var/log/squid/access.log squid
-### CoreDump
+hierarchy_stoplist cgi-bin ?
 coredump_dir /var/spool/squid
-dns_nameservers 1.1.1.1 1.0.0.1
 refresh_pattern ^ftp: 1440 20% 10080
 refresh_pattern ^gopher: 1440 0% 1440
 refresh_pattern -i (/cgi-bin/|\?) 0 0% 0
 refresh_pattern . 0 20% 4320
-visible_hostname blackestsaint
-mySquid
-
- # Setting machine's IP Address inside of our Squid config(security that only allows this machine to use this proxy server)
- sed -i "s|IP-ADDRESS|$IPADDR|g" /etc/squid/squid.conf
- 
- # Setting squid ports
- sed -i "s|Squid_Port1|$Squid_Port1|g" /etc/squid/squid.conf
- sed -i "s|Squid_Port2|$Squid_Port2|g" /etc/squid/squid.conf
- sed -i "s|Squid_Port3|$Squid_Port3|g" /etc/squid/squid.conf
-
- # Starting Proxy server
- echo -e "Restarting Squid Proxy server..."
- systemctl restart squid
+visible_hostname KinGmapua.com
+END
+sed -i $MYIP2 /etc/squid/squid.conf;
+service squid restart
 
 apt-get update
 apt-get upgrade -y
