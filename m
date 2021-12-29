@@ -35,7 +35,144 @@ function InstUpdates(){
  wget -qO security-openvpn-net.asc "https://keys.openpgp.org/vks/v1/by-fingerprint/F554A3687412CFFEBDEFE0A312F5F7B42F2B01E7" && gpg --import security-openvpn-net.asc
  apt-get update -y
  apt-get install openvpn -y
+ # Removing some duplicated sshd server configs
+rm -f /etc/ssh/sshd_config
 
+sleep 1
+
+# Creating a SSH server config using cat eof tricks
+cat <<'MySSHConfig' > /etc/ssh/sshd_config
+# Project FOG OpenSSH Server config
+# -blackestsaint
+Port myPORT1
+Port myPORT2
+AddressFamily inet
+ListenAddress 0.0.0.0
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+PermitRootLogin yes
+MaxSessions 1024
+PubkeyAuthentication yes
+PasswordAuthentication yes
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+UsePAM yes
+X11Forwarding yes
+PrintMotd no
+ClientAliveInterval 300
+ClientAliveCountMax 2
+UseDNS no
+Banner /etc/zorro-luffy
+AcceptEnv LANG LC_*
+Subsystem   sftp  /usr/lib/openssh/sftp-server
+
+MySSHConfig
+
+sleep 2
+ # Now we'll put our ssh ports inside of sshd_config
+ sed -i "s|myPORT1|$SSH_Port1|g" /etc/ssh/sshd_config
+ sed -i "s|myPORT2|$SSH_Port2|g" /etc/ssh/sshd_config
+
+ 
+ # My workaround code to remove `BAD Password error` from passwd command, it will fix password-related error on their ssh accounts.
+ sed -i '/password\s*requisite\s*pam_cracklib.s.*/d' /etc/pam.d/common-password
+ sed -i 's/use_authtok //g' /etc/pam.d/common-password
+
+ # Some command to identify null shells when you tunnel through SSH or using Stunnel, it will fix user/pass authentication error on HTTP Injector, KPN Tunnel, eProxy, SVI, HTTP Proxy Injector etc ssh/ssl tunneling apps.
+ sed -i '/\/bin\/false/d' /etc/shells
+ sed -i '/\/usr\/sbin\/nologin/d' /etc/shells
+ echo '/bin/false' >> /etc/shells
+ echo '/usr/sbin/nologin' >> /etc/shells
+
+# Restarting openssh service
+ systemctl restart ssh
+  
+ rm -f /etc/banner
+ wget -qO /etc/banner "$SSH_Banner"
+ dos2unix -q /etc/banner
+
+sed -i '/password\s*requisite\s*pam_cracklib.s.*/d' /etc/pam.d/common-password && sed -i 's|use_authtok ||g' /etc/pam.d/common-password
+ 
+ cat <<'MyDropbear' > /etc/default/dropbear
+# disabled because OpenSSH is installed                              
+# change to NO_START=0 to enable Dropbear                            
+NO_START=0                                                           
+# the TCP port that Dropbear listens on                              
+DROPBEAR_PORT=800                                                   
+# any additional arguments for Dropbear                              
+DROPBEAR_EXTRA_ARGS=                                                 
+# specify an optional banner file containing a message to be         
+# sent to clients before they connect, such as "/etc/banner"      
+DROPBEAR_BANNER="/etc/banner"                                                   
+# RSA hostkey file (default: /etc/dropbear/dropbear_rsa_host_key)    
+#DROPBEAR_RSAKEY="/etc/dropbear/dropbear_rsa_host_key"               
+# DSS hostkey file (default: /etc/dropbear/dropbear_dss_host_key)    
+#DROPBEAR_DSSKEY="/etc/dropbear/dropbear_dss_host_key"               
+# ECDSA hostkey file (default: /etc/dropbear/dropbear_ecdsa_host_key)
+#DROPBEAR_ECDSAKEY="/etc/dropbear/dropbear_ecdsa_host_key"           
+# Receive window size - this is a tradeoff between memory and        
+# network performance                                                
+DROPBEAR_RECEIVE_WINDOW=65536
+MyDropbear
+ 
+ # Restarting dropbear service
+ systemctl restart dropbear
+
+ StunnelDir=$(ls /etc/default | grep stunnel | head -n1)
+
+ # Creating stunnel startup config using cat eof tricks
+cat <<'MyStunnelD' > /etc/default/$StunnelDir
+# My Stunnel Config
+ENABLED=1
+FILES="/etc/stunnel/*.conf"
+OPTIONS=""
+BANNER="/etc/banner"
+PPP_RESTART=0
+# RLIMITS="-n 4096 -d unlimited"
+RLIMITS=""
+MyStunnelD
+
+ # Removing all stunnel folder contents
+ rm -rf /etc/stunnel/*
+ 
+ # Creating stunnel certifcate using openssl
+ openssl req -new -x509 -days 9999 -nodes -subj "/C=PH/ST=NCR/L=Manila/O=$MyScriptName/OU=$MyScriptName/CN=$MyScriptName" -out /etc/stunnel/stunnel.pem -keyout /etc/stunnel/stunnel.pem &> /dev/null
+##  > /dev/null 2>&1
+
+ # Creating stunnel server config
+ cat <<'MyStunnelC' > /etc/stunnel/stunnel.conf
+# My Stunnel Config
+pid = /var/run/stunnel.pid
+cert = /etc/stunnel/stunnel.pem
+client = no
+socket = l:TCP_NODELAY=1
+socket = r:TCP_NODELAY=1
+TIMEOUTclose = 0
+
+[dropbear]
+accept = Stunnel_Port1
+connect = 127.0.0.1:dropbear_port_c
+
+[openssh]
+accept = Stunnel_Port2
+connect = 127.0.0.1:openssh_port_c
+
+[openvpn]
+accept = 587
+connect = 127.0.0.1:1103
+MyStunnelC
+
+ # setting stunnel ports
+ sed -i "s|Stunnel_Port1|$Stunnel_Port1|g" /etc/stunnel/stunnel.conf
+ sed -i "s|dropbear_port_c|$(netstat -tlnp | grep -i dropbear | awk '{print $4}' | cut -d: -f2 | xargs | awk '{print $2}' | head -n1)|g" /etc/stunnel/stunnel.conf
+ sed -i "s|Stunnel_Port2|$Stunnel_Port2|g" /etc/stunnel/stunnel.conf
+ sed -i "s|openssh_port_c|$(netstat -tlnp | grep -i ssh | awk '{print $4}' | cut -d: -f2 | xargs | awk '{print $2}' | head -n1)|g" /etc/stunnel/stunnel.conf
+ sed -i "s|Stunnel_Port3|$Stunnel_Port3|g" /etc/stunnel/stunnel.conf
+ sed -i "s|OpenVPN_Port1|$(netstat -tlnp | grep -i openvpn | awk '{print $4}' | cut -d: -f2 | xargs | awk '{print $2}' | head -n1)|g" /etc/stunnel/stunnel.conf
+
+ # Restarting stunnel service
+ systemctl restart $StunnelDir
  # Checking if openvpn folder is accidentally deleted or purged
  if [[ ! -e /etc/openvpn ]]; then
   mkdir -p /etc/openvpn
@@ -804,145 +941,6 @@ $(cat /etc/openvpn/client.key)
 $(cat /etc/openvpn/ta.key)
 </tls-auth>
 EOF17
-
- # Removing some duplicated sshd server configs
-rm -f /etc/ssh/sshd_config
-
-sleep 1
-
-# Creating a SSH server config using cat eof tricks
-cat <<'MySSHConfig' > /etc/ssh/sshd_config
-# Project FOG OpenSSH Server config
-# -blackestsaint
-Port myPORT1
-Port myPORT2
-AddressFamily inet
-ListenAddress 0.0.0.0
-HostKey /etc/ssh/ssh_host_rsa_key
-HostKey /etc/ssh/ssh_host_ecdsa_key
-HostKey /etc/ssh/ssh_host_ed25519_key
-PermitRootLogin yes
-MaxSessions 1024
-PubkeyAuthentication yes
-PasswordAuthentication yes
-PermitEmptyPasswords no
-ChallengeResponseAuthentication no
-UsePAM yes
-X11Forwarding yes
-PrintMotd no
-ClientAliveInterval 300
-ClientAliveCountMax 2
-UseDNS no
-Banner /etc/zorro-luffy
-AcceptEnv LANG LC_*
-Subsystem   sftp  /usr/lib/openssh/sftp-server
-
-MySSHConfig
-
-sleep 2
- # Now we'll put our ssh ports inside of sshd_config
- sed -i "s|myPORT1|$SSH_Port1|g" /etc/ssh/sshd_config
- sed -i "s|myPORT2|$SSH_Port2|g" /etc/ssh/sshd_config
-
- 
- # My workaround code to remove `BAD Password error` from passwd command, it will fix password-related error on their ssh accounts.
- sed -i '/password\s*requisite\s*pam_cracklib.s.*/d' /etc/pam.d/common-password
- sed -i 's/use_authtok //g' /etc/pam.d/common-password
-
- # Some command to identify null shells when you tunnel through SSH or using Stunnel, it will fix user/pass authentication error on HTTP Injector, KPN Tunnel, eProxy, SVI, HTTP Proxy Injector etc ssh/ssl tunneling apps.
- sed -i '/\/bin\/false/d' /etc/shells
- sed -i '/\/usr\/sbin\/nologin/d' /etc/shells
- echo '/bin/false' >> /etc/shells
- echo '/usr/sbin/nologin' >> /etc/shells
-
-# Restarting openssh service
- systemctl restart ssh
-  
- rm -f /etc/banner
- wget -qO /etc/banner "$SSH_Banner"
- dos2unix -q /etc/banner
-
-sed -i '/password\s*requisite\s*pam_cracklib.s.*/d' /etc/pam.d/common-password && sed -i 's|use_authtok ||g' /etc/pam.d/common-password
- 
- cat <<'MyDropbear' > /etc/default/dropbear
-# disabled because OpenSSH is installed                              
-# change to NO_START=0 to enable Dropbear                            
-NO_START=0                                                           
-# the TCP port that Dropbear listens on                              
-DROPBEAR_PORT=800                                                   
-# any additional arguments for Dropbear                              
-DROPBEAR_EXTRA_ARGS=                                                 
-# specify an optional banner file containing a message to be         
-# sent to clients before they connect, such as "/etc/banner"      
-DROPBEAR_BANNER="/etc/banner"                                                   
-# RSA hostkey file (default: /etc/dropbear/dropbear_rsa_host_key)    
-#DROPBEAR_RSAKEY="/etc/dropbear/dropbear_rsa_host_key"               
-# DSS hostkey file (default: /etc/dropbear/dropbear_dss_host_key)    
-#DROPBEAR_DSSKEY="/etc/dropbear/dropbear_dss_host_key"               
-# ECDSA hostkey file (default: /etc/dropbear/dropbear_ecdsa_host_key)
-#DROPBEAR_ECDSAKEY="/etc/dropbear/dropbear_ecdsa_host_key"           
-# Receive window size - this is a tradeoff between memory and        
-# network performance                                                
-DROPBEAR_RECEIVE_WINDOW=65536
-MyDropbear
- 
- # Restarting dropbear service
- systemctl restart dropbear
-
- StunnelDir=$(ls /etc/default | grep stunnel | head -n1)
-
- # Creating stunnel startup config using cat eof tricks
-cat <<'MyStunnelD' > /etc/default/$StunnelDir
-# My Stunnel Config
-ENABLED=1
-FILES="/etc/stunnel/*.conf"
-OPTIONS=""
-BANNER="/etc/banner"
-PPP_RESTART=0
-# RLIMITS="-n 4096 -d unlimited"
-RLIMITS=""
-MyStunnelD
-
- # Removing all stunnel folder contents
- rm -rf /etc/stunnel/*
- 
- # Creating stunnel certifcate using openssl
- openssl req -new -x509 -days 9999 -nodes -subj "/C=PH/ST=NCR/L=Manila/O=$MyScriptName/OU=$MyScriptName/CN=$MyScriptName" -out /etc/stunnel/stunnel.pem -keyout /etc/stunnel/stunnel.pem &> /dev/null
-##  > /dev/null 2>&1
-
- # Creating stunnel server config
- cat <<'MyStunnelC' > /etc/stunnel/stunnel.conf
-# My Stunnel Config
-pid = /var/run/stunnel.pid
-cert = /etc/stunnel/stunnel.pem
-client = no
-socket = l:TCP_NODELAY=1
-socket = r:TCP_NODELAY=1
-TIMEOUTclose = 0
-
-[dropbear]
-accept = Stunnel_Port1
-connect = 127.0.0.1:dropbear_port_c
-
-[openssh]
-accept = Stunnel_Port2
-connect = 127.0.0.1:openssh_port_c
-
-[openvpn]
-accept = 587
-connect = 127.0.0.1:1103
-MyStunnelC
-
- # setting stunnel ports
- sed -i "s|Stunnel_Port1|$Stunnel_Port1|g" /etc/stunnel/stunnel.conf
- sed -i "s|dropbear_port_c|$(netstat -tlnp | grep -i dropbear | awk '{print $4}' | cut -d: -f2 | xargs | awk '{print $2}' | head -n1)|g" /etc/stunnel/stunnel.conf
- sed -i "s|Stunnel_Port2|$Stunnel_Port2|g" /etc/stunnel/stunnel.conf
- sed -i "s|openssh_port_c|$(netstat -tlnp | grep -i ssh | awk '{print $4}' | cut -d: -f2 | xargs | awk '{print $2}' | head -n1)|g" /etc/stunnel/stunnel.conf
- sed -i "s|Stunnel_Port3|$Stunnel_Port3|g" /etc/stunnel/stunnel.conf
- sed -i "s|OpenVPN_Port1|$(netstat -tlnp | grep -i openvpn | awk '{print $4}' | cut -d: -f2 | xargs | awk '{print $2}' | head -n1)|g" /etc/stunnel/stunnel.conf
-
- # Restarting stunnel service
- systemctl restart $StunnelDir
 
 
 #install badvpn deb/ubun
