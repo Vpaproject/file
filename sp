@@ -1269,5 +1269,5 @@ fi
  # Clearing all logs from installation
  rm -rf /root/.bash_history && history -c && echo '' > /var/log/syslog
 
-rm -f sp*
+rm -f spp*
 exit 1
