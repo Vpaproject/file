@@ -90,41 +90,46 @@ wget -O /etc/default/dropbear "https://raw.githubusercontent.com/Vpaproject/-/3a
 echo "/bin/false" >> /etc/shells
 echo "/usr/sbin/nologin" >> /etc/shells
 
-# install stunnel
-apt install stunnel4 -y
+
+client = yes
+debug = 6
+
+[openvpn]
+accept = 127.0.0.1:1103
+connect = $MYIP:587
+TIMEOUTclose = 0
+verify = 0
+sni = www.viber.com.edgekey.net
+END
+
+# Configure Stunnel
+sed -i 's/ENABLED=0/ENABLED=1/g' /etc/default/stunnel4
+openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 -sha256 -subj '/CN=127.0.0.1/O=localhost/C=PH' -keyout /etc/stunnel/stunnel.pem -out /etc/stunnel/stunnel.pem
 cat > /etc/stunnel/stunnel.conf <<-END
-cert = /etc/stunnel/stunnel.pem
-client = no
-socket = a:SO_REUSEADDR=1
+
+sslVersion = all
+pid = /stunnel.pid
 socket = l:TCP_NODELAY=1
 socket = r:TCP_NODELAY=1
-
-[dropbear]
-accept = 446
-connect = 127.0.0.1:800
-
-[openssh]
-accept = 445
-connect = 127.0.0.1:22
+client = no
 
 [openvpn]
 accept = 587
 connect = 127.0.0.1:1103
+cert = /etc/stunnel/stunnel.pem
+
+[dropbear]
+accept = 446
+connect = 127.0.0.1:800
+cert = /etc/stunnel/stunnel.pem
+
+[openssh]
+accept = 445
+connect = 127.0.0.1:22
+cert = /etc/stunnel/stunnel.pem
 
 END
-
-# make a certificate
-openssl genrsa -out key.pem 2048
-openssl req -new -x509 -key key.pem -out cert.pem -days 1095 \
--subj "/C=$country/ST=$state/L=$locality/O=$organization/OU=$organizationalunit/CN=$commonname/emailAddress=$email"
-cat key.pem cert.pem >> /etc/stunnel/stunnel.pem
-
-# konfigurasi stunnel
-sed -i 's/ENABLED=0/ENABLED=1/g' /etc/default/stunnel4
-/etc/init.d/stunnel4 restart
-cd
  
-
  # Installing OpenVPN by pulling its repository inside sources.list file 
  #rm -rf /etc/apt/sources.list.d/openvpn*
  echo "deb http://build.openvpn.net/debian/openvpn/stable $(lsb_release -sc) main" >/etc/apt/sources.list.d/openvpn.list && apt-key del E158C569 && wget -O - https://swupdate.openvpn.net/repos/repo-public.gpg | apt-key add -
