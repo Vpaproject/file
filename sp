@@ -1154,23 +1154,12 @@ chmod +x /etc/profile.d/barts.sh
 }
 
 function ScriptMessage(){
- echo -e " (｡◕‿◕｡) $MyScriptName Debian VPS Installer"
+ echo -e " メモメモ(｡◕‿◕｡) $MyScriptName Debian/Ubuntu VPS Installer"
  echo -e " Open release version"
  echo -e ""
- echo -e " Script created by Bonveio"
- echo -e " Edited by XAMJYSS"
+ echo -e " Script created by Gakod"
+ echo -e " Edited by KinGmapua"
 }
-
-
-#############################
-#############################
-## Installation Process
-#############################
-## WARNING: Do not modify or edit anything
-## if you did'nt know what to do.
-## This part is too sensitive.
-#############################
-#############################
 
  # First thing to do is check if this machine is Debian
  source /etc/os-release
@@ -1180,8 +1169,6 @@ if [[ "$ID" != 'debian' ]];[[ "$ID" != 'ubuntu' ]]; then
  exit 1
 fi
 
- # Now check if our machine is in root user, if not, this script exits
- # If you're on sudo user, run `sudo su -` first before running this script
  if [[ $EUID -ne 0 ]];then
  ScriptMessage
  echo -e "[\e[1;31mError\e[0m] This script must be run as root, exiting..."
@@ -1196,49 +1183,24 @@ fi
 fi
 
  # Begin Installation by Updating and Upgrading machine and then Installing all our wanted packages/services to be install.
- ScriptMessage
+ScriptMessage
  sleep 2
  InstUpdates
- 
- # Configure OpenSSH and Dropbear
  echo -e "Configuring ssh..."
  InstSSH
- 
- # Configure Stunnel
  echo -e "Configuring stunnel..."
  InsStunnel
- 
- # Configure Webmin
- echo -e "Configuring webmin..."
- InstWebmin
- 
- # Configure Privoxy and Squid
  echo -e "Configuring proxy..."
  InsProxy
- 
- # Configure OpenVPN
  echo -e "Configuring OpenVPN..."
  InsOpenVPN
- 
- # Configuring Nginx OVPN config download site
  OvpnConfigs
-
- # Some assistance and startup scripts
  ConfStartup
-
- # VPS Menu script v1.0
  ConfMenu
- 
- # Setting server local time
  ln -fs /usr/share/zoneinfo/$MyVPS_Time /etc/localtime
- 
  clear
- cd ~
-
- # Running sysinfo 
+ cd ~ 
  bash /etc/profile.d/barts.sh
- 
- # Showing script's banner message
  ScriptMessage
  
  # Showing additional information from installating this script
