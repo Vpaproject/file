@@ -1174,7 +1174,7 @@ function ScriptMessage(){
 
  # First thing to do is check if this machine is Debian
  source /etc/os-release
-if [[ "$ID" != 'debian' ]]; then
+if [[ "$ID" != 'debian' ]];[[ "$ID" != 'ubuntu' ]]; then
  ScriptMessage
  echo -e "[\e[1;31mError\e[0m] This script is for Debian only, exting..." 
  exit 1
