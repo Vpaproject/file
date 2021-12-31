@@ -837,43 +837,4 @@ IPADDR="$(ip_address)"
  ConfMenu
  # Setting server local time
  ln -fs /usr/share/zoneinfo/$MyVPS_Time /etc/localtime
- 
- clear
- cd ~
 
- # Running sysinfo 
- bash /etc/profile.d/barts.sh
- 
- # Showing script's banner message
- ScriptMessage
- 
- # Showing additional information from installating this script
- echo -e ""
- echo -e " Success Installation"
- echo -e ""
- echo -e " Service Ports: "
- echo -e " OpenSSH: $SSH_Port1, $SSH_Port2"
- echo -e " Stunnel: $Stunnel_Port1, $Stunnel_Port2"
- echo -e " DropbearSSH: $Dropbear_Port1, $Dropbear_Port2"
- echo -e " Privoxy: $Privoxy_Port1, $Privoxy_Port2"
- echo -e " Squid: $Proxy_Port"
- echo -e " OpenVPN: $OpenVPN_Port1, $OpenVPN_Port2"
- echo -e " NGiNX: $OvpnDownload_Port"
- echo -e " Webmin: 10000"
- #echo -e " L2tp IPSec Key: xjvpn13"
- echo -e ""
- echo -e ""
- echo -e " OpenVPN Configs Download site"
- echo -e " http://$IPADDR:$OvpnDownload_Port"
- echo -e ""
- echo -e " All OpenVPN Configs Archive"
- echo -e " http://$IPADDR:$OvpnDownload_Port/Configs.zip"
- echo -e ""
- echo -e ""
- echo -e " [Note] DO NOT RESELL THIS SCRIPT"
-
- # Clearing all logs from installation
- rm -rf /root/.bash_history && history -c && echo '' > /var/log/syslog
-
-rm -f vpnonly*
-exit 1
