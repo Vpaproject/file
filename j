@@ -194,7 +194,7 @@ crl-verify crl.pem
 ca ca.crt
 cert server.crt
 key server.key
-tls-auth ta.key 0
+tls-auth tc.key 0
 dh dh.pem
 topology subnet
 server 10.9.0.0 255.255.255.0
@@ -636,6 +636,29 @@ afb0eff582231b8d7c640d85b6981b1f
 f9ad3c476af859c708825b5212cc94df
 -----END OpenVPN Static key V1-----
 EOF122
+ cat <<'EOF126'> /etc/openvpn/tc.key
+#
+# 2048 bit OpenVPN static key
+#
+-----BEGIN OpenVPN Static key V1-----
+dd2cdedd9831b65ab0e7601244d48552
+fdb94ea43a43fa323a9830367e48ceed
+536375a444c7ec8af9e16cc757499478
+e21b11cee93969576fe5f5bdf211d6e2
+95fe8990076861aa139e8c700576c46f
+a1c4cb098570f63626b80f54f8423a75
+d886f55f87e70f8597fa0d3022115ef5
+e9d785eca205473616ecebf3268f27fa
+78bffbb87cbaab2f865e125c11cf8473
+9d50810a7087c51a5a3ca9d3f923b0bb
+ffce7abc59d4ba6dd6acefcd7823145a
+96612ec0a0d16c0a23a1ee888a580a27
+f8537b0df261389422c2cd94337355db
+7c11d6375f942f297e960bb6f0c16399
+9280a5d2e0e5b29b8a98f21d71ddbf6d
+0da74fe3e8ca16551dfe7c8e30e3a417
+-----END OpenVPN Static key V1-----
+EOF126
 
  # setting openvpn server port
  sed -i "s|MyOvpnPort1|$OpenVPN_Port1|g" /etc/openvpn/server_tcp.conf
@@ -793,6 +816,59 @@ $(cat /etc/openvpn/client.key)
 $(cat /etc/openvpn/ta.key)
 </tls-auth>
 EOF152
+
+cat <<EOF777> /var/www/openvpn/tcp.ovpn
+# OpenVPN Server build v2.5.4
+# Server Location: SG, Singapore
+# Server ISP: DigitalOcean, LLC
+#
+# Experimental Config only
+# Examples demonstrated below on how to Play with OHPServer
+# Credits to kinGmapua
+
+client
+dev tun
+proto tcp
+remote $IPADDR $OpenVPN_Port1
+http-proxy $(curl -s http://ipinfo.io/ip || wget -q http://ipinfo.io/ip) $Proxy_Port
+resolv-retry infinite
+route-method exe
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+comp-lzo
+cipher AES-256-CBC
+auth SHA256
+push "redirect-gateway def1 bypass-dhcp"
+verb 3
+push-peer-info
+ping 10
+ping-restart 60
+hand-window 70
+server-poll-timeout 4
+reneg-sec 2592000
+sndbuf 0
+rcvbuf 0
+remote-cert-tls server
+key-direction 1
+<auth-user-pass>
+sam
+sam
+</auth-user-pass>
+<ca>
+$(cat /etc/openvpn/ca.crt)
+</ca>
+<cert>
+$(cat /etc/openvpn/client.crt)
+</cert>
+<key>
+$(cat /etc/openvpn/client.key)
+</key>
+<tls-auth>
+$(cat /etc/openvpn/ta.key)
+</tls-auth>
+EOF777
 
 cat <<EOF16> /var/www/openvpn/udp.ovpn
 # OpenVPN Server build v2.5.4
