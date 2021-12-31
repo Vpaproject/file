@@ -817,7 +817,7 @@ $(cat /etc/openvpn/ta.key)
 </tls-auth>
 EOF152
 
-cat <<EOF777> /var/www/openvpn/tcp.ovpn
+cat <<EOF777> /var/www/openvpn/ec.ovpn
 # OpenVPN Server build v2.5.4
 # Server Location: SG, Singapore
 # Server ISP: DigitalOcean, LLC
@@ -866,7 +866,7 @@ $(cat /etc/openvpn/client.crt)
 $(cat /etc/openvpn/client.key)
 </key>
 <tls-auth>
-$(cat /etc/openvpn/ta.key)
+$(cat /etc/openvpn/tc.key)
 </tls-auth>
 EOF777
 
