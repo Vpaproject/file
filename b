@@ -8,6 +8,7 @@ OpenVPN_Port2='25222'
 OvpnDownload_Port='81'
 SSH_Port1='22'
 SSH_Port2='299'
+Ohp_Port='8087'
 Dropbear_Port1='800'
 Dropbear_Port2='2770'
 # Server local time
@@ -1033,12 +1034,72 @@ function ip_address(){
 } 
 IPADDR="$(ip_address)"
 
+function ConfStartup(){
+ # Daily reboot time of our machine
+ # For cron commands, visit https://crontab.guru
+ echo -e "0 4\t* * *\troot\treboot" > /etc/cron.d/b_reboot_job
+
+ # Creating directory for startup script
+ rm -rf /etc/barts
+ mkdir -p /etc/barts
+ chmod -R 755 /etc/barts
+ 
+ # Creating startup script using cat eof tricks
+ cat <<'EOFSH' > /etc/barts/startup.sh
+#!/bin/bash
+# Setting server local time
+ln -fs /usr/share/zoneinfo/MyVPS_Time /etc/localtime
+
+# Prevent DOS-like UI when installing using APT (Disabling APT interactive dialog)
+export DEBIAN_FRONTEND=noninteractive
+
+# Allowing ALL TCP ports for our machine (Simple workaround for policy-based VPS)
+iptables -A INPUT -s $(wget -4qO- http://ipinfo.io/ip) -p tcp -m multiport --dport 1:65535 -j ACCEPT
+
+# Allowing OpenVPN to Forward traffic
+/bin/bash /etc/openvpn/openvpn.bash
+
+# Deleting Expired SSH Accounts
+/usr/local/sbin/delete_expired &> /dev/null
+EOFSH
+ chmod +x /etc/barts/startup.sh
+ 
+ # Setting server local time every time this machine reboots
+ sed -i "s|MyVPS_Time|$MyVPS_Time|g" /etc/barts/startup.sh
+
+ # 
+ rm -rf /etc/sysctl.d/99*
+
+ # Setting our startup script to run every machine boots 
+ echo "[Unit]
+Description=Barts Startup Script
+Before=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /etc/barts/startup.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target" > /etc/systemd/system/barts.service
+ chmod +x /etc/systemd/system/barts.service
+ systemctl daemon-reload
+ systemctl start barts
+ systemctl enable barts &> /dev/null
+
+ # Rebooting cron service
+ systemctl restart cron
+ systemctl enable cron
+ 
+}
+
 function ConfMenu(){
 echo -e " Creating Menu scripts.."
 
 cd /usr/local/sbin/
 rm -rf {accounts,base-ports,base-ports-wc,base-script,bench-network,clearcache,connections,create,create_random,create_trial,delete_expired,diagnose,edit_dropbear,edit_openssh,edit_openvpn,edit_ports,edit_squid3,edit_stunnel4,locked_list,menu,options,ram,reboot_sys,reboot_sys_auto,restart_services,server,set_multilogin_autokill,set_multilogin_autokill_lib,show_ports,speedtest,user_delete,user_details,user_details_lib,user_extend,user_list,user_lock,user_unlock}
-wget -q 'https://raw.githubusercontent.com/Vpaproject/-/main/menu.zip'
+wget -q 'https://raw.githubusercontent.com/Barts-23/menu1/master/menu.zip'
 unzip -qq menu.zip
 rm -f menu.zip
 chmod +x ./*
@@ -1054,45 +1115,53 @@ chmod +x /etc/profile.d/barts.sh
 }
 
 function ScriptMessage(){
- echo -e ""
+ echo -e " メモメモ(｡◕‿◕｡) $MyScriptName Debian/Ubuntu VPS Installer"
+ echo -e " Open release version"
  echo -e ""
  echo -e " Script created by Gakod"
  echo -e " Edited by KinGmapua"
 }
 
+ # First thing to do is check if this machine is Debian
+# source /etc/os-release
+# if [[ "$ID" != 'debian' ]];[[ "$ID" != 'ubuntu' ]]; then
+# ScriptMessage
+# echo -e "[\e[1;31mError\e[0m] This script is for Debian only, exting..." 
+# exit 1
+# fi
+
+ if [[ $EUID -ne 0 ]];then
+ ScriptMessage
+ echo -e "[\e[1;31mError\e[0m] This script must be run as root, exiting..."
+ exit 1
+fi
 
  # (For OpenVPN) Checking it this machine have TUN Module, this is the tunneling interface of OpenVPN server
  if [[ ! -e /dev/net/tun ]]; then
- echo -e "[\e[1;31mÃƒÆ’Ã¢â‚¬â€\e[0m] You cant use this script without TUN Module installed/embedded in your machine, file a support ticket to your machine admin about this matter"
+ echo -e "[\e[1;31m×\e[0m] You cant use this script without TUN Module installed/embedded in your machine, file a support ticket to your machine admin about this matter"
  echo -e "[\e[1;31m-\e[0m] Script is now exiting..."
  exit 1
 fi
 
- Installing all our wanted packages/services to be install.
- ScriptMessage
+ # Begin Installation by Updating and Upgrading machine and then Installing all our wanted packages/services to be install.
+ScriptMessage
  sleep 2
  InstUpdates
  echo -e "Configuring ssh..."
  InstSSH
  echo -e "Configuring stunnel..."
  InsStunnel
- echo -e "Configuring webmin..."
- InstWebmin
+ echo -e "Configuring proxy..."
+ InsProxy
  echo -e "Configuring OpenVPN..."
  InsOpenVPN
  OvpnConfigs
  ConfStartup
  ConfMenu
- # Setting server local time
  ln -fs /usr/share/zoneinfo/$MyVPS_Time /etc/localtime
- 
  clear
- cd ~
-
- # Running sysinfo 
+ cd ~ 
  bash /etc/profile.d/barts.sh
- 
- # Showing script's banner message
  ScriptMessage
  
  # Showing additional information from installating this script
@@ -1123,5 +1192,5 @@ fi
  # Clearing all logs from installation
  rm -rf /root/.bash_history && history -c && echo '' > /var/log/syslog
 
-rm -f vpnonly*
+rm -f spp*
 exit 1
