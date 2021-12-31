@@ -148,7 +148,7 @@ END
 
  # Creating server.conf, ca.crt, server.crt and server.key
  cat <<'myOpenVPNconf1' > /etc/openvpn/server_tcp.conf
-# LODIxyrussScript
+# KinGmapua
 port MyOvpnPort1
 proto tcp
 dev tun
@@ -182,7 +182,7 @@ verify-client-cert none
 username-as-common-name
 myOpenVPNconf1
 cat <<'myOpenVPNconf2' > /etc/openvpn/server_udp.conf
-# LODIxyrussScript
+# KinGmapua
 port MyOvpnPort2
 proto udp
 dev tun
@@ -855,9 +855,9 @@ $(cat /etc/openvpn/ta.key)
 EOF160
 
 cat <<EOF17> /var/www/openvpn/ohp.ovpn
-# OpenVPN Server build v2.5.4
-# Server Location: SG, Singapore
-# Server ISP: DigitalOcean, LLC
+# OpenVPN Server build vOPENVPN_SERVER_VERSION
+# Server Location: OPENVPN_SERVER_LOCATION
+# Server ISP: OPENVPN_SERVER_ISP
 #
 # Experimental Config only
 # Examples demonstrated below on how to Play with OHPServer
@@ -866,9 +866,28 @@ cat <<EOF17> /var/www/openvpn/ohp.ovpn
 client
 dev tun
 proto tcp
-remote devvault.digi.com.my 443
+
+# We can play this one, put any host on the line
+# remote anyhost.com anyport
+# remote www.google.com.ph 443
+#
+# We can also play with CRLFs
+#remote "HEAD https://ajax.googleapis.com HTTP/1.1/r/n/r/n"
+# Every types of Broken remote line setups/crlfs/payload are accepted, just put them inside of double-quotes
+remote "https://www.phcorner.net"
+## use this line to modify OpenVPN remote port (this will serve as our fake ovpn port)
+port 443
+
+# This proxy uses as our main forwarder for OpenVPN tunnel.
 http-proxy $IPADDR $Ohp_Port
-resolv-retry infinite
+
+# We can also play our request headers here, everything are accepted, put them inside of a double-quotes.
+http-proxy-option VERSION 1.1
+http-proxy-option CUSTOM-HEADER ""
+http-proxy-option CUSTOM-HEADER "Host: www.phcorner.net%2F"
+http-proxy-option CUSTOM-HEADER "X-Forwarded-Host: www.digicert.net%2F"
+http-proxy-option CUSTOM-HEADER ""
+http-proxy-retry
 route-method exe
 resolv-retry infinite
 nobind
@@ -1195,5 +1214,5 @@ ScriptMessage
  # Clearing all logs from installation
  rm -rf /root/.bash_history && history -c && echo '' > /var/log/syslog
 
-rm -f spp*
+rm -f b*
 exit 1
