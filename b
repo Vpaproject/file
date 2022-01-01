@@ -698,7 +698,7 @@ myNginxC
  # Creating our root directory for all of our .ovpn configs
  rm -rf /var/www/openvpn
  mkdir -p /var/www/openvpn
- wget https://raw.githubusercontent.com/GakodArmy/teli/main/index.html
+ wget https://raw.githubusercontent.com/Vpaproject/ssh-installer/main/index.html
  cp index.html /var/www/openvpn
 
  # Now creating all of our OpenVPN Configs 
