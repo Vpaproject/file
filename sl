@@ -19,9 +19,9 @@ newclient () {
 	echo "<key>"
 	cat /etc/openvpn/easy-rsa/pki/private/"$1".key
 	echo "</key>"
-	echo "<tls-auth>"
-	sed -ne '/BEGIN OpenVPN Static key/,$ p' /etc/openvpn/ta.key
-	echo "</tls-auth>"
+	echo "<tls-crypt>"
+	sed -ne '/BEGIN OpenVPN Static key/,$ p' /etc/openvpn/tc.key
+	echo "</tls-crypt>"
 	} > ~/"$1".ovpn
 }
 
@@ -51,6 +51,7 @@ mv /etc/openvpn/EasyRSA-3.0.7/ /etc/openvpn/easy-rsa/
 chown -R root:root /etc/openvpn/easy-rsa/
 rm -f ~/easyrsa.tgz
 cd /etc/openvpn/easy-rsa/
+
 # Workaround to remove unharmful error until easy-rsa 3.0.7
 # https://github.com/OpenVPN/easy-rsa/issues/261
 sed -i 's/^RANDFILE/#RANDFILE/g' /etc/openvpn/easy-rsa/openssl-easyrsa.cnf
@@ -66,7 +67,7 @@ cp pki/ca.crt pki/private/ca.key pki/issued/server.crt pki/private/server.key pk
 # CRL is read with each client connection, when OpenVPN is dropped to nobody
 chown nobody:"$GROUPNAME" /etc/openvpn/crl.pem
 # Generate key for tls-crypt
-openvpn --genkey --secret /etc/openvpn/ta.key
+openvpn --genkey --secret /etc/openvpn/tc.key
 
 # Use predefined ffdhe2048 group
 
@@ -90,7 +91,7 @@ cert server.crt
 key server.key
 dh dh.pem
 auth SHA512
-tls-auth ta.key 0
+tls-crypt tc.key
 topology subnet
 server 10.8.0.0 255.255.255.0
 ifconfig-pool-persist ipp.txt" > /etc/openvpn/server.conf
