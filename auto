@@ -91,9 +91,6 @@ else SERVER_NAME=`ls /etc/openvpn/server*.key | grep -oE 'server_[0-9a-Z]+'`; fi
 	echo 'port '$PORT'
 proto tcp
 dev tun
-dev-type tun
-sndbuf 0
-rcvbuf 0
 crl-verify crl.pem
 ca ca.crt
 cert '$SERVER_NAME'.crt
@@ -118,32 +115,20 @@ echo "client
 dev tun
 proto tcp
 remote-cert-tls server
-remote $IP $PORT
-http-proxy $IP 993
-persist-key
-persist-tun
-pull
-resolv-retry infinite
-nobind
-comp-lzo
-setenv CLIENT_CERT 0
-remote-cert-tls server
-verb 3
-mute-replay-warnings
-auth-user-pass
-auth-nocache
-redirect-gateway def1
-script-security 2
-route-method exe
-route-delay 2
-cipher none
-# key-direction 1
+remote 127.0.0.1 $PORT
+http-proxy $IP 8081
+http-proxy-option VERSION 1.1
+http-proxy-option CUSTOM-HEADER Host weixin.qq.cn
+setenv opt block-outside-dns
+cipher AES-128-CBC
+auth SHA1
+key-direction 1
 auth-nocache" > /etc/openvpn/client-template.txt
 sq=$([ -d /etc/squid ] && echo squid || echo squid3)
 mv /etc/$sq/squid.conf /etc/$sq/squid.confx
 echo 'http_access allow all
 via off
-http_port 0.0.0.0:993
+http_port 0.0.0.0:8081
 visible_hostname udp.team' > /etc/$sq/squid.conf
 systemctl restart {$sq,openvpn@server,iptab}
 clear
