@@ -104,7 +104,7 @@ chown nobody:$GROUPNAME /etc/openvpn/crl.pem
 # Generate key for tls-auth
 openvpn --genkey --secret /etc/openvpn/ta.key
 
-echo "port $PORT1
+port 1103
 proto tcp
 dev tun
 sndbuf 0
@@ -134,7 +134,7 @@ verb 3
 crl-verify crl.pem" >> /etc/openvpn/server.conf
 echo 'mssfix 1200' >> /etc/openvpn/server.conf
 
-echo "port $PORT2
+port 1194
 proto udp
 dev tun
 sndbuf 0
