@@ -51,31 +51,6 @@ mv /etc/openvpn/EasyRSA-3.0.7/ /etc/openvpn/easy-rsa/
 chown -R root:root /etc/openvpn/easy-rsa/
 rm -f ~/easyrsa.tgz
 cd /etc/openvpn/easy-rsa/
-	# Reapply IPTABLES
-	echo "#!/bin/sh
-iptables -F
-iptables -X
-iptables -t nat -F
-iptables -t nat -X
-iptables -t mangle -F
-iptables -t mangle -X
-iptables -P INPUT ACCEPT
-iptables -P FORWARD ACCEPT
-iptables -P OUTPUT ACCEPT
-iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-iptables -I FORWARD -j ACCEPT
-iptables -I FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-sysctl -w net.ipv4.ip_forward=1" > /sbin/iptab
-	chmod a+x /sbin/iptab;iptab
-	echo "[Unit]
-Description=Packet Filtering Framework
-DefaultDependencies=no
-Before=network-pre.target
-Wants=network-pre.target
-[Service]
-Type=oneshot
-ExecStart=/sbin/iptab
-ExecReload=/sbin/iptab
 # Workaround to remove unharmful error until easy-rsa 3.0.7
 # https://github.com/OpenVPN/easy-rsa/issues/261
 sed -i 's/^RANDFILE/#RANDFILE/g' /etc/openvpn/easy-rsa/openssl-easyrsa.cnf
