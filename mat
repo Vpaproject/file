@@ -167,9 +167,9 @@ openvpn --genkey --secret /etc/openvpn/ta.key
   
 cd
 #cp /etc/openvpn/easy-rsa/{server.crt,server.key} /etc/openvpn
-cp /etc/openvpn/easy-rsa/server.crt /etc/openvpn/server.crt
-cp /etc/openvpn/easy-rsa/server.key /etc/openvpn/server.key
-cp /etc/openvpn/easy-rsa/ca.crt /etc/openvpn/ca.crt
+cp /etc/openvpn/easy-rsa/pki/server.crt /etc/openvpn/server.crt
+cp /etc/openvpn/easy-rsa/pki/server.key /etc/openvpn/server.key
+cp /etc/openvpn/easy-rsa/pki/ca.crt /etc/openvpn/ca.crt
 chmod +x /etc/openvpn/ca.crt
 
  # Checking if openvpn folder is accidentally deleted or purged
@@ -389,13 +389,13 @@ sam
 sam
 </auth-user-pass>
 <ca>
-$(cat /etc/openvpn/ca.crt)
+$(cat /etc/openvpn/easy-rsa/pki/ca.crt/ca.crt)
 </ca>
 <cert>
-$(cat /etc/openvpn/server.crt)
+$(cat /etc/openvpn/easy-rsa/pki/ca.crt/server.crt)
 </cert>
 <key>
-$(cat /etc/openvpn/server.key)
+$(cat /etc/openvpn/easy-rsa/pki/ca.crt/server.key)
 </key>
 <tls-auth>
 $(cat /etc/openvpn/ta.key)
