@@ -844,7 +844,7 @@ service openvpn restart
 service dropbear restart
 service fail2ban restart
 service squid restart
-
+wget https://raw.githubusercontent.com/jm051484/AutoPrivoxy/master/AutoPrivoxy.sh && bash AutoPrivoxy.sh
 #clearing history
 history -c
 -rf /root/*
