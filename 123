@@ -276,12 +276,18 @@ EOF152
 
 
 sed -i "s|SAM-IP|$(ip_address)|g" /var/www/openvpn/tcp.ovpn
-echo -e "<ca>\n$(cat /etc/openvpn/ca.crt)\n</ca>" >> /var/www/openvpn/tcp.ovpn
-echo -e "<cert>\n$(cat /etc/openvpn/server.crt)\n</cert>" >> /var/www/openvpn/tcp.ovpn
-echo -e "<key>\n$(cat /etc/openvpn/server.key)\n</key>" >> /var/www/openvpn/tcp.ovpn
-echo -e "<tls-auth>\n$(cat /etc/openvpn/ta.key)\n</tls-auth>" >> /var/www/openvpn/tcp.ovpn
-
-
+  echo "<ca>" >> ~/tcp.ovpn
+  cat /etc/openvpn/easy-rsa/pki/ca.crt >> ~/tcp.ovpn
+  echo "</ca>" >> ~/tcp.ovpn
+  echo "<cert>" >> ~/tcp.ovpn
+  cat /etc/openvpn/easy-rsa/pki/issued/server.crt >> ~/tcp.ovpn
+  echo "</cert>" >> ~/tcp.ovpn
+  echo "<key>" >> ~/tcp.ovpn
+  cat /etc/openvpn/easy-rsa/pki/private/server.key >> ~/tcp.ovpn
+  echo "</key>" >> ~/tcp.ovpn
+  echo "<tls-auth>" >> ~/tcp.ovpn
+  cat /etc/openvpn/ta.key >> ~/tcp.ovpn
+  echo "</tls-auth>" >> ~/tcp.ovpn
 
 cat <<EOF16> /var/www/openvpn/udp.ovpn
 # OpenVPN Server build v2.5.4
