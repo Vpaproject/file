@@ -86,15 +86,15 @@ service ssh restart
 service dropbear restart
 
 #install OpenVPN
-# cp -r /usr/share/easy-rsa/ /etc/openvpn
-# mkdir /etc/openvpn/easy-rsa/keys
+cp -r /usr/share/easy-rsa/ /etc/openvpn
+mkdir /etc/openvpn/easy-rsa/keys
 
 apt-get update
 apt-get install openvpn iptables openssl ca-certificates -y
 # An old version of easy-rsa was available by default in some openvpn packages
-if [[ -d /etc/openvpn/easy-rsa/ ]]; then
-  rm -rf /etc/openvpn/easy-rsa/
-fi
+# if [[ -d /etc/openvpn/easy-rsa/ ]]; then
+#  rm -rf /etc/openvpn/easy-rsa/
+# fi
 
 # Get easy-rsa
 cd /tmp
