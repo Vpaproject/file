@@ -15,7 +15,7 @@ fi
 echo 'OHP For OpenVPN+SSH'
 read -e -p 'Input your Server IP: ' -i $SERVER_IP SERVER_IP
 read -e -p 'Input SSH Port: ' -i '22' SSH_PORT
-read -e -p 'Input OpenVPN TCP Port: ' -i '1194' OPENVPN_PORT
+read -e -p 'Input OpenVPN TCP Port: ' -i '1103' OPENVPN_PORT
 read -e -p 'Input Privoxy Port: ' -i '8118' PRIVOXY_PORT
 read -e -p 'Input Squid Port: ' -i '8088' SQUID_PORT
 read -e -p 'Input OHP+PRIVOXY+SSH Port: ' -i '9999' OPS_PORT
