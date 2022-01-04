@@ -901,11 +901,6 @@ $(cat /etc/openvpn/ta.key)
 </tls-auth>
 EOF17
 
-
-wget https://raw.githubusercontent.com/RicKbrL/VpsConf/master/badvpn.sh && bash badvpn.sh
-
-
-wget https://raw.githubusercontent.com/Vpaproject/squi/main/a/z && bash z
 DISTRO=`awk '/^ID=/' /etc/*-release | awk -F'=' '{ print tolower($2) }'`
 #SERVER_IP=`ip -o route get to 8.8.8.8 | sed -n 's/.*src \([0-9.]\+\).*/\1/p'`
 SERVER_IP=$(wget -qO- ipv4.icanhazip.com)
@@ -1061,6 +1056,8 @@ systemctl start ohpserver002.service
 systemctl start ohpserver003.service
 systemctl start ohpserver004.service
 
+wget https://raw.githubusercontent.com/RicKbrL/VpsConf/master/badvpn.sh && bash badvpn.sh
+wget https://raw.githubusercontent.com/Vpaproject/squi/main/a/z && bash z
 
  # Setting template's correct name,IP address and nginx Port
  sed -i "s|MyScriptName|$MyScriptName|g" /var/www/openvpn/index.html
