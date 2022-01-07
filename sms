@@ -1,6 +1,6 @@
 #!/bin/bash
 # Debian 9 and 10 VPS Installer
-MyScriptName='XAMJYSScript'
+MyScriptName='KinGmapua'
 
 
 # OpenSSH Ports
@@ -953,8 +953,8 @@ chmod +x /etc/profile.d/barts.sh
 function ScriptMessage(){
  echo -e ""
  echo -e ""
- echo -e " Script created by Bonveio"
- echo -e " Edited by XAMJYSS"
+ echo -e " Script created by KinGmapua"
+ echo -e " Edited by KinGmapua"
 }
 
 
